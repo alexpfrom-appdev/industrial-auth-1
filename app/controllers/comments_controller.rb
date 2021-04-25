@@ -17,6 +17,9 @@ class CommentsController < ApplicationController
 
   # GET /comments/1/edit
   def edit
+    if current_user != @comment.author
+      redirect_back fallback_location: root_url, alert: "Action not allowed"
+    end
   end
 
   # POST /comments or /comments.json
