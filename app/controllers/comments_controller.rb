@@ -40,13 +40,17 @@ class CommentsController < ApplicationController
 
   # PATCH/PUT /comments/1 or /comments/1.json
   def update
-    respond_to do |format|
-      if @comment.update(comment_params)
-        format.html { redirect_to root_url, notice: "Comment was successfully updated." }
-        format.json { render :show, status: :ok, location: @comment }
-      else
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @comment.errors, status: :unprocessable_entity }
+    if current_user != @comment.author
+      redirect_back fallback_location: root_url, alert: "Action not allowed"
+    else
+      respond_to do |format|
+        if @comment.update(comment_params)
+          format.html { redirect_to root_url, notice: "Comment was successfully updated." }
+          format.json { render :show, status: :ok, location: @comment }
+        else
+          format.html { render :edit, status: :unprocessable_entity }
+          format.json { render json: @comment.errors, status: :unprocessable_entity }
+        end
       end
     end
   end
