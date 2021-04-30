@@ -1,5 +1,6 @@
 class CommentsController < ApplicationController
   before_action :set_comment, only: %i[ show edit update destroy ]
+  before_action :ensure_current_user_is_author, only: [:destroy, :update, :edit]
 
   # GET /comments or /comments.json
   def index
@@ -17,6 +18,9 @@ class CommentsController < ApplicationController
 
   # GET /comments/1/edit
   def edit
+    if current_user != @comment.author
+      redirect_back fallback_location: root_url, alert: "Action not allowed"
+    end
   end
 
   # POST /comments or /comments.json
@@ -37,13 +41,17 @@ class CommentsController < ApplicationController
 
   # PATCH/PUT /comments/1 or /comments/1.json
   def update
-    respond_to do |format|
-      if @comment.update(comment_params)
-        format.html { redirect_to root_url, notice: "Comment was successfully updated." }
-        format.json { render :show, status: :ok, location: @comment }
-      else
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @comment.errors, status: :unprocessable_entity }
+    if current_user != @comment.author
+      redirect_back fallback_location: root_url, alert: "Action not allowed"
+    else
+      respond_to do |format|
+        if @comment.update(comment_params)
+          format.html { redirect_to root_url, notice: "Comment was successfully updated." }
+          format.json { render :show, status: :ok, location: @comment }
+        else
+          format.html { render :edit, status: :unprocessable_entity }
+          format.json { render json: @comment.errors, status: :unprocessable_entity }
+        end
       end
     end
   end
@@ -61,6 +69,12 @@ class CommentsController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_comment
       @comment = Comment.find(params[:id])
+    end
+
+    def ensure_current_user_is_author
+      if current_user != @comment.author
+        redirect_back fallback_location: root_url, alert: "Action not allowed"
+      end
     end
 
     # Only allow a list of trusted parameters through.
